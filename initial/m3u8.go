@@ -9,12 +9,10 @@ import (
 	"m3u8/aria2"
 	"net/url"
 	"os"
-	"os/exec"
 	"path"
 	"path/filepath"
 	"runtime"
 	"strings"
-	"syscall"
 	"time"
 
 	log "github.com/sirupsen/logrus"
@@ -187,6 +185,11 @@ func handler(one *OneDown) {
 	}
 }
 
+func GetGlobalStat() (downloadSpeed, numActive, numStopped, numStoppedTotal, numWaiting, uploadSpeed int64) {
+	glo := aria.GetGlobalStat()
+	return glo.DownloadSpeed, glo.NumActive, glo.NumStopped, glo.NumStoppedTotal, glo.NumWaiting, glo.UploadSpeed
+}
+
 func Run() {
 	// 启动日志
 	InitLogger()
@@ -206,14 +209,4 @@ func Run() {
 		}
 		time.Sleep(time.Second / 2)
 	}
-}
-
-// CloseWindow 关闭窗口后执行
-// 删除data目录
-func CloseWindow() {
-	cmd := exec.Command("rm", "-rf", "data")
-	if runtime.GOOS == "windows" {
-		cmd.SysProcAttr = &syscall.SysProcAttr{HideWindow: true}
-	}
-	log.Fatalf("aria2c err : %v", cmd.Run().Error())
 }

@@ -7,9 +7,9 @@ import (
 )
 
 func main() {
-	go gui()
-
 	initial.Run()
+
+	go gui()
 
 	app.Main()
 }

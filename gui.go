@@ -4,7 +4,6 @@ import (
 	"fmt"
 	"m3u8/initial"
 	"os"
-	"time"
 
 	"gioui.org/app"
 	"gioui.org/font/gofont"
@@ -19,9 +18,9 @@ import (
 func gui() {
 	w := app.NewWindow(
 		app.Title("m3u8"),
-		app.Size(unit.Dp(400), unit.Dp(230)),
+		app.Size(unit.Dp(400), unit.Dp(300)),
 		// app.MaxSize(unit.Dp(400), unit.Dp(170)),
-		app.MinSize(unit.Dp(400), unit.Dp(230)),
+		app.MinSize(unit.Dp(400), unit.Dp(300)),
 	)
 	// ops are the operations from the UI
 	var ops op.Ops
@@ -31,21 +30,21 @@ func gui() {
 
 	var Input widget.Editor
 
-	var speed int
-
-	go func() {
-		for {
-			speed++
-			time.Sleep(time.Second)
-		}
-	}()
+	var (
+		downloadSpeed, numActive, numWaiting int64
+	)
 
 	// th defnes the material design style
 	th := material.NewTheme(gofont.Collection())
 
 	for e := range w.Events() {
+
 		switch e := e.(type) {
 		case system.FrameEvent:
+
+			// 获取aria2c全局信息
+			downloadSpeed, numActive, _, _, numWaiting, _ = initial.GetGlobalStat()
+
 			gtx := layout.NewContext(&ops, e)
 			layout.Flex{
 				// Vertical alignment, from top to bottom
@@ -70,13 +69,41 @@ func gui() {
 				layout.Rigid(
 					func(gtx layout.Context) layout.Dimensions {
 						margins := layout.Inset{
-							Top:    unit.Dp(25),
-							Bottom: unit.Dp(25),
+							// Top:    unit.Dp(25),
+							// Bottom: unit.Dp(25),
 							Right:  unit.Dp(35),
 							Left:   unit.Dp(35),
 						}
 						return margins.Layout(gtx, func(gtx layout.Context) layout.Dimensions {
-							bar := material.Label(th, unit.Dp(25), fmt.Sprintf("speed : %d",speed))
+							bar := material.Label(th, unit.Dp(20), fmt.Sprintf("speed : %d", downloadSpeed))
+							return bar.Layout(gtx)
+						})
+					},
+				),
+				layout.Rigid(
+					func(gtx layout.Context) layout.Dimensions {
+						margins := layout.Inset{
+							// Top:    unit.Dp(25),
+							// Bottom: unit.Dp(25),
+							Right:  unit.Dp(35),
+							Left:   unit.Dp(35),
+						}
+						return margins.Layout(gtx, func(gtx layout.Context) layout.Dimensions {
+							bar := material.Label(th, unit.Dp(20), fmt.Sprintf("active : %d", numActive))
+							return bar.Layout(gtx)
+						})
+					},
+				),
+				layout.Rigid(
+					func(gtx layout.Context) layout.Dimensions {
+						margins := layout.Inset{
+							// Top:    unit.Dp(25),
+							// Bottom: unit.Dp(25),
+							Right:  unit.Dp(35),
+							Left:   unit.Dp(35),
+						}
+						return margins.Layout(gtx, func(gtx layout.Context) layout.Dimensions {
+							bar := material.Label(th, unit.Dp(20), fmt.Sprintf("wait : %d", numWaiting))
 							return bar.Layout(gtx)
 						})
 					},
@@ -106,6 +133,6 @@ func gui() {
 	}
 
 	//close window
-	initial.CloseWindow()
+	initial.StopAria2c()
 	os.Exit(0)
 }

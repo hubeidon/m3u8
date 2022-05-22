@@ -88,12 +88,12 @@ func (aria *AriaEngine) IsDone(uid string) bool {
 }
 
 type GlobalStat struct {
-	DownloadSpeed   string `json:"downloadSpeed"`
-	NumActive       string `json:"numActive"`
-	NumStopped      string `json:"numStopped"`
-	NumStoppedTotal string `json:"numStoppedTotal"`
-	NumWaiting      string `json:"numWaiting"`
-	UploadSpeed     string `json:"uploadSpeed"`
+	DownloadSpeed   int64 `json:"downloadSpeed"`
+	NumActive       int64  `json:"numActive"`
+	NumStopped      int64 `json:"numStopped"`
+	NumStoppedTotal int64 `json:"numStoppedTotal"`
+	NumWaiting      int64 `json:"numWaiting"`
+	UploadSpeed     int64 `json:"uploadSpeed"`
 }
 
 func (aria *AriaEngine) GetGlobalStat() GlobalStat {
@@ -107,11 +107,11 @@ func (aria *AriaEngine) GetGlobalStat() GlobalStat {
 	parse := gjson.ParseBytes(aria.resp.Body())
 	result := parse.Get("result")
 	return GlobalStat{
-		DownloadSpeed:   result.Get("downloadSpeed").String(),
-		NumActive:       result.Get("numActive").String(),
-		NumStopped:      result.Get("numStopped").String(),
-		NumStoppedTotal: result.Get("numStoppedTotal").String(),
-		NumWaiting:      result.Get("numWaiting").String(),
-		UploadSpeed:     result.Get("uploadSpeed").String(),
+		DownloadSpeed:   result.Get("downloadSpeed").Int(),
+		NumActive:       result.Get("numActive").Int(),
+		NumStopped:      result.Get("numStopped").Int(),
+		NumStoppedTotal: result.Get("numStoppedTotal").Int(),
+		NumWaiting:      result.Get("numWaiting").Int(),
+		UploadSpeed:     result.Get("uploadSpeed").Int(),
 	}
 }
