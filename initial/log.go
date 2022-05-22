@@ -10,7 +10,7 @@ import (
 
 func InitLogger() {
 	log.SetFormatter(&nested.Formatter{
-		HideKeys:        true,
+		HideKeys:        false,
 		TimestampFormat: "2006-01-02 15:04:05",
 	})
 

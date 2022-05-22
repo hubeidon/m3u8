@@ -148,9 +148,9 @@ func NewOneHttp(httpUrl string) *OneDown {
 	dir = strings.ReplaceAll(dir, `\`, `/`)
 	dir = Mkdir(dir)
 
-	code, body, _ := fasthttp.GetTimeout([]byte{}, httpUrl, time.Second*5)
+	code, body, _ := fasthttp.GetTimeout([]byte{}, httpUrl, time.Second*10)
 	if code != 200 {
-		log.Error(err)
+		log.Error(code, err)
 		runtime.Goexit()
 	}
 	return &OneDown{

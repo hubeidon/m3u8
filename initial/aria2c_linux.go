@@ -18,7 +18,7 @@ func StartAria2c() {
 		panic("aria2c 启动失败")
 	}
 	Aria2cPid = cmd.Process
-	log.Fatal(cmd.Wait())
+	log.Error(cmd.Wait())
 }
 
 func StopAria2c() {

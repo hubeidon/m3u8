@@ -74,8 +74,8 @@ func gui() {
 							Right:  unit.Dp(35),
 							Left:   unit.Dp(35),
 						}
-						return margins.Layout(gtx, func(gtx layout.Context) layout.Dimensions {
-							bar := material.Label(th, unit.Dp(20), fmt.Sprintf("speed : %d", downloadSpeed))
+						return margins.Layout(gtx, func(gtx layout.Context) layout.Dimensions {							
+							bar := material.Label(th, unit.Dp(20), fmt.Sprintf("speed : %.2fM/s", float64(downloadSpeed/1024/1024)))
 							return bar.Layout(gtx)
 						})
 					},
