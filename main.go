@@ -7,7 +7,7 @@ import (
 )
 
 func main() {
-	initial.Run()
+	initial.Run("")
 
 	go gui()
 

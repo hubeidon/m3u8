@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"m3u8/initial"
 	"os"
+	"strings"
 
 	"gioui.org/app"
 	"gioui.org/font/gofont"
@@ -71,10 +72,10 @@ func gui() {
 						margins := layout.Inset{
 							// Top:    unit.Dp(25),
 							// Bottom: unit.Dp(25),
-							Right:  unit.Dp(35),
-							Left:   unit.Dp(35),
+							Right: unit.Dp(35),
+							Left:  unit.Dp(35),
 						}
-						return margins.Layout(gtx, func(gtx layout.Context) layout.Dimensions {							
+						return margins.Layout(gtx, func(gtx layout.Context) layout.Dimensions {
 							bar := material.Label(th, unit.Dp(20), fmt.Sprintf("speed : %.2fM/s", float64(downloadSpeed/1024/1024)))
 							return bar.Layout(gtx)
 						})
@@ -85,8 +86,8 @@ func gui() {
 						margins := layout.Inset{
 							// Top:    unit.Dp(25),
 							// Bottom: unit.Dp(25),
-							Right:  unit.Dp(35),
-							Left:   unit.Dp(35),
+							Right: unit.Dp(35),
+							Left:  unit.Dp(35),
 						}
 						return margins.Layout(gtx, func(gtx layout.Context) layout.Dimensions {
 							bar := material.Label(th, unit.Dp(20), fmt.Sprintf("active : %d", numActive))
@@ -99,8 +100,8 @@ func gui() {
 						margins := layout.Inset{
 							// Top:    unit.Dp(25),
 							// Bottom: unit.Dp(25),
-							Right:  unit.Dp(35),
-							Left:   unit.Dp(35),
+							Right: unit.Dp(35),
+							Left:  unit.Dp(35),
 						}
 						return margins.Layout(gtx, func(gtx layout.Context) layout.Dimensions {
 							bar := material.Label(th, unit.Dp(20), fmt.Sprintf("wait : %d", numWaiting))
@@ -111,7 +112,10 @@ func gui() {
 				layout.Rigid(
 					func(gtx layout.Context) layout.Dimensions {
 						if startButton.Clicked() {
-							initial.HttpOrLocal(Input.Text())
+							text := strings.TrimSpace(Input.Text())
+							if text != "" {
+								go initial.HttpOrLocal(text)
+							}
 							Input.SetText("")
 						}
 

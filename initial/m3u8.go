@@ -30,7 +30,8 @@ type Mp4 struct {
 	Num uint
 }
 
-func Mkdir(path string) string {
+// Rename 文件夹已经存在，进行重命名
+func Rename(path string) string {
 	for {
 		//判断文件是否存在
 		if _, err := os.Stat(path); errors.Is(err, fs.ErrNotExist) {
@@ -38,7 +39,20 @@ func Mkdir(path string) string {
 			return path
 		} else {
 			// 是否是文件夹 , 存在添加后缀 -cp
-			path += "-cp"
+			path += fmt.Sprint(time.Now().Unix() % 10000)
+		}
+	}
+}
+
+// RenameFile 文件已经存在，进行重命名
+func RenameFile(path string) (file *os.File, newPath string) {
+	for {
+		if _, err := os.Stat(path); errors.Is(err, fs.ErrNotExist) {
+			f, _ := os.Create(path)
+			return f, path
+		} else {
+			res := strings.Split(path, ".")
+			path = fmt.Sprintf("%s-%d.%s", res[0], time.Now().Unix()%10000, res[1])
 		}
 	}
 }
@@ -50,7 +64,7 @@ func JoinMp4(mp4 <-chan Mp4) {
 		log.Info("%#v 等待合成", mp4)
 		for {
 			if _, err := os.Stat(fmt.Sprintf("%s/out%d.ts", v.Dir, v.Num)); errors.Is(err, fs.ErrNotExist) {
-				time.Sleep(time.Second)
+				time.Sleep(time.Second * 2)
 				continue
 			}
 			break
@@ -70,17 +84,9 @@ func JoinMp4(mp4 <-chan Mp4) {
 			buf.Write(ts)
 		}
 
-		for {
-			if _, err := os.Stat(v.Out); errors.Is(err, fs.ErrNotExist) {
-				f, _ := os.Create(v.Out)
-				log.Info(f.Write(buf.Bytes()))
-				log.Info("写入成功,关闭文件:", f.Close())
-				break
-			} else {
-				res := strings.Split(v.Out, ".")
-				v.Out = res[0] + "-cp.mp4"
-			}
-		}
+		f, _ := RenameFile(v.Dir + ".mp4")
+		log.Info(f.Write(buf.Bytes()))
+
 	}
 }
 
@@ -121,7 +127,7 @@ func NewOneDown(m3u8Path string) *OneDown {
 	_, fileName := path.Split(m3u8Path)
 	dir, _ := filepath.Abs(fmt.Sprintf("./data/%s", fileName))
 	dir = strings.ReplaceAll(dir, `\`, `/`)
-	dir = Mkdir(dir)
+	dir = Rename(dir)
 
 	m3u8Byte, err := os.ReadFile(m3u8Path)
 	if err != nil {
@@ -146,7 +152,7 @@ func NewOneHttp(httpUrl string) *OneDown {
 
 	dir, _ := filepath.Abs(fmt.Sprintf("./data/%s", m3u8FileName))
 	dir = strings.ReplaceAll(dir, `\`, `/`)
-	dir = Mkdir(dir)
+	dir = Rename(dir)
 
 	code, body, _ := fasthttp.GetTimeout([]byte{}, httpUrl, time.Second*10)
 	if code != 200 {
@@ -190,9 +196,9 @@ func GetGlobalStat() (downloadSpeed, numActive, numStopped, numStoppedTotal, num
 	return glo.DownloadSpeed, glo.NumActive, glo.NumStopped, glo.NumStoppedTotal, glo.NumWaiting, glo.UploadSpeed
 }
 
-func Run() {
+func Run(level string) {
 	// 启动日志
-	InitLogger()
+	InitLogger(level)
 
 	// 启动aria2c rpc服务
 	go StartAria2c()

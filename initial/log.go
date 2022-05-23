@@ -8,19 +8,19 @@ import (
 	log "github.com/sirupsen/logrus"
 )
 
-func InitLogger() {
+func InitLogger(level string) {
 	log.SetFormatter(&nested.Formatter{
-		HideKeys:        false,
+		HideKeys:        true,
+		NoColors:        true,
 		TimestampFormat: "2006-01-02 15:04:05",
 	})
-
-	log.SetReportCaller(true)
-
+	
 	f, _ := os.OpenFile("_m3u8.log", os.O_APPEND|os.O_RDWR|os.O_CREATE, os.ModePerm)
 
-	log.SetOutput(io.MultiWriter(f, os.Stdout))
-	//
-	//log.Println("test")
-
-	// log.SetOutput(f)
+	if level == "dev"{
+		log.SetReportCaller(true)
+		log.SetOutput(io.MultiWriter(f, os.Stdout))
+	}else{
+		log.SetOutput(f)
+	}
 }
