@@ -16,12 +16,12 @@ func StartAria2c() {
 
 	abs, err := filepath.Abs("")
 	if err != nil {
-		log.Fatalf("获取绝对路径失败！err : %v", err)
+		log.Fatal(err)
 	}
 
 	err = os.Setenv("path", path+";"+abs)
 	if err != nil {
-		log.Fatalf("设置环境变量失败！err : %v", err)
+		log.Fatal(err)
 	}
 
 	cmd := exec.Command("aria2c", "--enable-rpc", "--rpc-listen-all")
