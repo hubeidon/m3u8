@@ -1,3 +1,6 @@
+//go:build gui
+//+build gui
+
 package main
 
 import (
@@ -23,6 +26,7 @@ func gui() {
 		// app.MaxSize(unit.Dp(400), unit.Dp(170)),
 		app.MinSize(unit.Dp(400), unit.Dp(300)),
 	)
+
 	// ops are the operations from the UI
 	var ops op.Ops
 
@@ -36,6 +40,7 @@ func gui() {
 	)
 
 	// th defnes the material design style
+	//th := material.NewTheme(gofont.Collection())
 	th := material.NewTheme(gofont.Collection())
 
 	for e := range w.Events() {
