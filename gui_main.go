@@ -1,5 +1,5 @@
 //go:build gui
-// +build gui
+//+build gui
 
 package main
 
