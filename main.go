@@ -1,27 +1,17 @@
 //go:build cmd
-//+build cmd
+// +build cmd
 
 package main
 
 import (
 	"fmt"
 	"m3u8/initial"
-	"runtime"
-	"strings"
-	"time"
 )
 
-func PrintGONum() {
-	for {
-		fmt.Println(runtime.NumGoroutine())
-		time.Sleep(time.Second * 5)
-	}
-}
+// var u string = `https://webplay.weilekangnet.com:59666/data6/B1AF27ADA87782E7/E6387F593401CC76/play.ts?_KS=24b7da2d31ebde13ea5e0a530875cb1b&_KE=1654904339`
 
 func main() {
-	initial.Run("")
-
-	go PrintGONum()
+	initial.InitLogger("dev")
 
 	var url string
 	for {
@@ -30,6 +20,6 @@ func main() {
 			fmt.Println(err)
 			continue
 		}
-		go initial.HttpOrLocal(strings.TrimSpace(url))
+		// go initial.HttpOrLocal(strings.TrimSpace(url))
 	}
 }

@@ -5,7 +5,6 @@ package main
 
 import (
 	"fmt"
-	"m3u8/initial"
 	"os"
 	"strings"
 
@@ -47,9 +46,6 @@ func gui() {
 
 		switch e := e.(type) {
 		case system.FrameEvent:
-
-			// 获取aria2c全局信息
-			downloadSpeed, numActive, _, _, numWaiting, _ = initial.GetGlobalStat()
 
 			gtx := layout.NewContext(&ops, e)
 			layout.Flex{
@@ -119,7 +115,7 @@ func gui() {
 						if startButton.Clicked() {
 							text := strings.TrimSpace(Input.Text())
 							if text != "" {
-								go initial.HttpOrLocal(text)
+								// go initial.HttpOrLocal(text)
 							}
 							Input.SetText("")
 						}
@@ -141,7 +137,5 @@ func gui() {
 		}
 	}
 
-	//close window
-	initial.StopAria2c()
 	os.Exit(0)
 }

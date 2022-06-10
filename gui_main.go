@@ -9,9 +9,9 @@ import (
 )
 
 func main() {
-	initial.Run("")
+	initial.InitLogger("dev")
 
-	go gui()
+	// go gui()
 
 	app.Main()
 }
