@@ -16,7 +16,9 @@ import (
 )
 
 var (
-	m3u8 *colly.Collector
+	m3u8                    *colly.Collector
+	tsFileNum               = make(map[string]int)
+	NotificationToStartWork = make(chan string, 3)
 )
 
 func init() {
@@ -61,12 +63,20 @@ func init() {
 		// 解析m3u8 文件
 		m3u8Reader := bytes.NewReader(r.Body)
 		buf := bufio.NewReader(m3u8Reader)
+		var l bool
 		for {
 			readString, err := buf.ReadString('\n')
 			if strings.HasPrefix(readString, "https://") {
 				readString = strings.TrimSpace(readString)
 				c.Visit(readString)
+				tsFileNum[readString[56:72]]++
+
+				if !l{
+					NotificationToStartWork <- readString[56:72]
+					l = true
+				}
 			}
+
 			if err != nil {
 				return
 			}
@@ -79,7 +89,7 @@ func init() {
 			return
 		}
 
-		dirName := uri[39:55]
+		dirName := uri[56:72]
 
 		Mkdir("./data/"+dirName, os.ModePerm)
 
@@ -87,6 +97,7 @@ func init() {
 		if err := r.Save(fmt.Sprintf("./data/%s/%s", dirName, uri[i+1:])); err != nil {
 			log.Error(err)
 		}
+
 	})
 
 	m3u8 = c
@@ -99,7 +110,10 @@ func Down(uri string) {
 	}
 }
 
-//
+// getUrlFileFormat 返回url文件类型
+// https://xxx.html -> html
+// https://xxx -> ""
+// https://xxx.ts -> ts
 func getUrlFileFormat(uri string) string {
 	i := strings.Index(uri, "?")
 	if i < 0 {
@@ -115,6 +129,7 @@ func getUrlFileFormat(uri string) string {
 
 var m = make(map[string]struct{})
 
+// Mkdir 创建文件
 func Mkdir(name string, perm os.FileMode) {
 	if _, ok := m[name]; !ok {
 		os.MkdirAll(name, perm)
@@ -122,22 +137,37 @@ func Mkdir(name string, perm os.FileMode) {
 	}
 }
 
+// CompositeVideo 等待下载器下载完毕，后合成视频
 func CompositeVideo() {
-	for {
-		time.Sleep(time.Second * 5)
+	for dir := range NotificationToStartWork {
 		m3u8.Wait()
 
-		dirs, err := os.ReadDir("./data")
+		workPath := fmt.Sprintf("./data/%s", dir)
 
+		dirs, err := os.ReadDir(workPath)
 		if err != nil {
 			log.Error(err)
 			continue
 		}
 
-		for _, dir := range dirs {
-			if dir.IsDir() {
-				
-			}
+		if len(dirs) != tsFileNum[dir] {
+			log.Error("m3u8中的uri数量和实际下载完毕的不符")
+			continue
+		}
+
+		var buf bytes.Buffer
+
+		for i := 0; i < tsFileNum[dir]; i++ {
+			name := fmt.Sprintf("out%d.ts", i)
+			ts, _ := os.ReadFile(workPath + "/" + name)
+			buf.Write(ts)
+		}
+
+		if f, err := os.OpenFile(dir+".mp4", os.O_RDWR|os.O_CREATE|os.O_TRUNC, os.ModePerm); err != nil {
+			log.Error(err)
+		} else {
+			f.Write(buf.Bytes())
+			f.Close()
 		}
 	}
 }
