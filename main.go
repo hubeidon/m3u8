@@ -8,8 +8,6 @@ import (
 	"m3u8/initial"
 )
 
-// var u string = `https://webplay.weilekangnet.com:59666/data6/B1AF27ADA87782E7/E6387F593401CC76/play.ts?_KS=24b7da2d31ebde13ea5e0a530875cb1b&_KE=1654904339`
-
 func main() {
 	initial.InitLogger("dev")
 
@@ -20,6 +18,6 @@ func main() {
 			fmt.Println(err)
 			continue
 		}
-		// go initial.HttpOrLocal(strings.TrimSpace(url))
+		go initial.Down(url)
 	}
 }
