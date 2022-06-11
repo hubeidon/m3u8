@@ -1,12 +1,12 @@
-//go:build gui
-//+build gui
+// go:build gui
+// +build gui
 
 package main
 
 import (
 	"fmt"
+	"m3u8/initial"
 	"os"
-	"strings"
 
 	"gioui.org/app"
 	"gioui.org/font/gofont"
@@ -113,9 +113,9 @@ func gui() {
 				layout.Rigid(
 					func(gtx layout.Context) layout.Dimensions {
 						if startButton.Clicked() {
-							text := strings.TrimSpace(Input.Text())
+							text := Input.Text()
 							if text != "" {
-								// go initial.HttpOrLocal(text)
+								go initial.Down(text)
 							}
 							Input.SetText("")
 						}

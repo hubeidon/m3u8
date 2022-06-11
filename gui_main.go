@@ -1,5 +1,5 @@
-//go:build gui
-//+build gui
+// go:build gui
+// +build gui
 
 package main
 
@@ -11,7 +11,7 @@ import (
 func main() {
 	initial.InitLogger("dev")
 
-	// go gui()
+	go gui()
 
 	app.Main()
 }

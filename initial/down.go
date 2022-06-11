@@ -15,7 +15,9 @@ import (
 	log "github.com/sirupsen/logrus"
 )
 
-var m3u8 *colly.Collector
+var (
+	m3u8 *colly.Collector
+)
 
 func init() {
 	c := colly.NewCollector()
@@ -77,10 +79,12 @@ func init() {
 			return
 		}
 
-		Mkdir("./data/"+uri[39:55], os.ModePerm)
+		dirName := uri[39:55]
+
+		Mkdir("./data/"+dirName, os.ModePerm)
 
 		i := strings.LastIndex(uri, "/")
-		if err := r.Save(fmt.Sprintf("./data/%s/%s", uri[39:55], uri[i+1:])); err != nil {
+		if err := r.Save(fmt.Sprintf("./data/%s/%s", dirName, uri[i+1:])); err != nil {
 			log.Error(err)
 		}
 	})
@@ -103,7 +107,7 @@ func getUrlFileFormat(uri string) string {
 		return uri[i2+1:]
 	}
 	i2 := strings.LastIndex(uri[:i], ".")
-	if i < 0 {
+	if i2 < 0 {
 		return ""
 	}
 	return uri[i2+1 : i]
@@ -115,5 +119,25 @@ func Mkdir(name string, perm os.FileMode) {
 	if _, ok := m[name]; !ok {
 		os.MkdirAll(name, perm)
 		m[name] = struct{}{}
+	}
+}
+
+func CompositeVideo() {
+	for {
+		time.Sleep(time.Second * 5)
+		m3u8.Wait()
+
+		dirs, err := os.ReadDir("./data")
+
+		if err != nil {
+			log.Error(err)
+			continue
+		}
+
+		for _, dir := range dirs {
+			if dir.IsDir() {
+				
+			}
+		}
 	}
 }
