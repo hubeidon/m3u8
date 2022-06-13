@@ -23,7 +23,7 @@ func main() {
 			continue
 		}
 		go initial.Down(url)
-		log.Infof("down %s", url)
+		log.Infof("start downlaod %s", url[62:78])
 	}
 }
 

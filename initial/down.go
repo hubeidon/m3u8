@@ -4,8 +4,6 @@ import (
 	"bufio"
 	"bytes"
 	"fmt"
-	"net"
-	"net/http"
 	"os"
 	"strings"
 	"time"
@@ -18,25 +16,16 @@ import (
 var (
 	m3u8                    *colly.Collector
 	tsFileNum               = make(map[string]int)
-	NotificationToStartWork = make(chan string, 3)
+	notificationToStartWork = make(chan string, 3)
 )
 
 func init() {
 	c := colly.NewCollector()
 	c.Async = true
+
 	extensions.RandomUserAgent(c)
 
-	c.WithTransport(&http.Transport{
-		Proxy: http.ProxyFromEnvironment,
-		DialContext: (&net.Dialer{
-			Timeout:   2 * time.Minute,
-			KeepAlive: 30 * time.Second,
-		}).DialContext,
-		MaxIdleConns:          100,
-		IdleConnTimeout:       90 * time.Second,
-		TLSHandshakeTimeout:   10 * time.Second,
-		ExpectContinueTimeout: 1 * time.Second,
-	})
+	c.SetRequestTimeout(time.Minute)
 
 	if err := c.Limit(&colly.LimitRule{
 		DomainRegexp: `z.weilekangnet\.com`,
@@ -48,10 +37,6 @@ func init() {
 
 	c.OnError(func(r *colly.Response, err error) {
 		log.Errorf("url : %s , err : %v", r.Request.URL.String(), err)
-	})
-
-	c.OnRequest(func(r *colly.Request) {
-		log.Debug(r.URL.RequestURI())
 	})
 
 	// 解析m3u8文件
@@ -71,8 +56,8 @@ func init() {
 				c.Visit(readString)
 				tsFileNum[readString[56:72]]++
 
-				if !l{
-					NotificationToStartWork <- readString[56:72]
+				if !l {
+					notificationToStartWork <- readString[56:72]
 					l = true
 				}
 			}
@@ -139,7 +124,7 @@ func Mkdir(name string, perm os.FileMode) {
 
 // CompositeVideo 等待下载器下载完毕，后合成视频
 func CompositeVideo() {
-	for dir := range NotificationToStartWork {
+	for dir := range notificationToStartWork {
 		m3u8.Wait()
 
 		workPath := fmt.Sprintf("./data/%s", dir)
@@ -168,6 +153,7 @@ func CompositeVideo() {
 		} else {
 			f.Write(buf.Bytes())
 			f.Close()
+			log.Infof("downloaded %s", dir)
 		}
 	}
 }
