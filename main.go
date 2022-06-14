@@ -2,8 +2,8 @@ package main
 
 import (
 	"fmt"
-	log "github.com/sirupsen/logrus"
-	"m3u8/initial"
+	"gitee.com/don178/m3u8/global"
+	"gitee.com/don178/m3u8/initial"
 	"os"
 	"os/signal"
 )
@@ -23,7 +23,7 @@ func main() {
 			continue
 		}
 		go initial.Down(url)
-		log.Infof("start downlaod %s", url[62:78])
+		global.Slog.Infof("start downlaod %s", url[62:78])
 	}
 }
 
@@ -31,7 +31,7 @@ func listen(c chan os.Signal) {
 	for {
 		<-c
 		if err := os.RemoveAll("./data"); err != nil {
-			log.Error(err)
+			global.Slog.Error(err)
 		} else {
 			fmt.Println("\n已删除缓存数据, 退出程序!")
 			os.Exit(0)

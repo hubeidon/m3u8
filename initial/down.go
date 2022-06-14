@@ -10,7 +10,7 @@ import (
 
 	"github.com/gocolly/colly/v2"
 	"github.com/gocolly/colly/v2/extensions"
-	log "github.com/sirupsen/logrus"
+	"gitee.com/don178/m3u8/global"
 )
 
 var (
@@ -32,11 +32,11 @@ func init() {
 		RandomDelay:  500 * time.Millisecond,
 		Parallelism:  5,
 	}); err != nil {
-		log.Fatal(err)
+		global.Slog.Fatal(err)
 	}
 
 	c.OnError(func(r *colly.Response, err error) {
-		log.Errorf("url : %s , err : %v", r.Request.URL.String(), err)
+		global.Slog.Errorf("url : %s , err : %v", r.Request.URL.String(), err)
 	})
 
 	// 解析m3u8文件
@@ -80,7 +80,7 @@ func init() {
 
 		i := strings.LastIndex(uri, "/")
 		if err := r.Save(fmt.Sprintf("./data/%s/%s", dirName, uri[i+1:])); err != nil {
-			log.Error(err)
+			global.Slog.Error(err)
 		}
 
 	})
@@ -91,7 +91,7 @@ func init() {
 func Down(uri string) {
 	uri = strings.TrimSpace(uri)
 	if err := m3u8.Visit(uri); err != nil {
-		log.Errorf("%s,err: %v", uri, err)
+		global.Slog.Errorf("%s,err: %v", uri, err)
 	}
 }
 
@@ -131,12 +131,12 @@ func CompositeVideo() {
 
 		dirs, err := os.ReadDir(workPath)
 		if err != nil {
-			log.Error(err)
+			global.Slog.Error(err)
 			continue
 		}
 
 		if len(dirs) != tsFileNum[dir] {
-			log.Error("m3u8中的uri数量和实际下载完毕的不符")
+			global.Slog.Error("m3u8中的uri数量和实际下载完毕的不符")
 			continue
 		}
 
@@ -149,11 +149,11 @@ func CompositeVideo() {
 		}
 
 		if f, err := os.OpenFile(dir+".mp4", os.O_RDWR|os.O_CREATE|os.O_TRUNC, os.ModePerm); err != nil {
-			log.Error(err)
+			global.Slog.Error(err)
 		} else {
 			f.Write(buf.Bytes())
 			f.Close()
-			log.Infof("downloaded %s", dir)
+			global.Slog.Infof("downloaded %s", dir)
 		}
 	}
 }

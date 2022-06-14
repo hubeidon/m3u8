@@ -1,26 +1,29 @@
 package initial
 
 import (
-	"io"
+	"fmt"
 	"os"
 
-	nested "github.com/antonfisher/nested-logrus-formatter"
-	log "github.com/sirupsen/logrus"
+	"gitee.com/don178/m3u8/global"
+	"go.uber.org/zap"
+	"go.uber.org/zap/zapcore"
 )
 
-func InitLogger(level string) {
-	log.SetFormatter(&nested.Formatter{
-		HideKeys:        true,
-		NoColors:        true,
-		TimestampFormat: "2006-01-02 15:04:05",
-	})
-	
-	f, _ := os.OpenFile("_m3u8.log", os.O_APPEND|os.O_RDWR|os.O_CREATE, os.ModePerm)
+func init() {
+	// Encoder:编码器(如何写入日志)。
+	encoder := zapcore.NewConsoleEncoder(zap.NewDevelopmentEncoderConfig())
 
-	if level == "dev"{
-		log.SetReportCaller(true)
-		log.SetOutput(io.MultiWriter(f, os.Stdout))
-	}else{
-		log.SetOutput(f)
+	// WriterSyncer ：指定日志将写到哪里去
+	f, err := os.OpenFile("_cast.log", os.O_RDWR|os.O_CREATE|os.O_APPEND, os.ModePerm)
+	if err != nil {
+		fmt.Println(err)
+		return
 	}
+	writer := zapcore.AddSync(f)
+
+	// Log Level：哪种级别的日志将被写入。
+	core := zapcore.NewCore(encoder, writer, zapcore.DebugLevel)
+
+	global.Log = zap.New(core, zap.AddStacktrace(zap.ErrorLevel))
+	global.Slog = global.Log.Sugar()
 }
