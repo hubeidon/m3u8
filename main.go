@@ -9,7 +9,7 @@ import (
 )
 
 func main() {
-	initial.Run("")
+	initial.Run()
 
 	var c = make(chan os.Signal, 1)
 	signal.Notify(c, os.Interrupt, os.Kill)

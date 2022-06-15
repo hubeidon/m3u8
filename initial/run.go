@@ -1,7 +1,7 @@
 package initial
 
 
-func Run(level string){
+func Run(){
 	
 	go CompositeVideo()
 

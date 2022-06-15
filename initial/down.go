@@ -8,14 +8,16 @@ import (
 	"strings"
 	"time"
 
+	"gitee.com/don178/m3u8/global"
 	"github.com/gocolly/colly/v2"
 	"github.com/gocolly/colly/v2/extensions"
-	"gitee.com/don178/m3u8/global"
+	"go.uber.org/zap"
 )
 
 var (
 	m3u8                    *colly.Collector
-	tsFileNum               = make(map[string]int)
+	tsFileNum               = make(map[string]int, 6)
+	tsFileDoweloadedNum     = make(map[string]int, 6)
 	notificationToStartWork = make(chan string, 3)
 )
 
@@ -82,7 +84,7 @@ func init() {
 		if err := r.Save(fmt.Sprintf("./data/%s/%s", dirName, uri[i+1:])); err != nil {
 			global.Slog.Error(err)
 		}
-
+		tsFileDoweloadedNum[uri[56:72]]++
 	})
 
 	m3u8 = c
@@ -125,7 +127,19 @@ func Mkdir(name string, perm os.FileMode) {
 // CompositeVideo 等待下载器下载完毕，后合成视频
 func CompositeVideo() {
 	for dir := range notificationToStartWork {
-		m3u8.Wait()
+		// m3u8.Wait()
+
+		for {
+			time.Sleep(time.Second * 3)
+			ts := tsFileNum[dir]
+			tsed := tsFileDoweloadedNum[dir]
+			if ts == tsed {
+				global.Slog.Infof("%s下载完毕,开始合成", dir)
+				break
+			} else {
+				global.Log.Info(dir, zap.String("进度", fmt.Sprintf("%.2f%%", float64(tsed)/float64(ts)*100)), zap.Int("已下载", tsed), zap.Int("总数", ts))
+			}
+		}
 
 		workPath := fmt.Sprintf("./data/%s", dir)
 
@@ -154,6 +168,8 @@ func CompositeVideo() {
 			f.Write(buf.Bytes())
 			f.Close()
 			global.Slog.Infof("downloaded %s", dir)
+			delete(tsFileNum, dir)
+			delete(tsFileDoweloadedNum, dir)
 		}
 	}
 }
