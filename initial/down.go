@@ -16,8 +16,8 @@ import (
 
 var (
 	m3u8                    *colly.Collector
-	tsFileNum               = make(map[string]int, 6)
-	tsFileDoweloadedNum     = make(map[string]int, 6)
+	tsFileNum               = make(map[string]int64, 6)
+	tsFileDoweloadedNum     = make(map[string]*int64, 6)
 	notificationToStartWork = make(chan string, 3)
 )
 
@@ -84,7 +84,8 @@ func init() {
 		if err := r.Save(fmt.Sprintf("./data/%s/%s", dirName, uri[i+1:])); err != nil {
 			global.Slog.Error(err)
 		}
-		tsFileDoweloadedNum[uri[56:72]]++
+		// tsFileDoweloadedNum[uri[56:72]]++
+		mapWrite(&tsFileDoweloadedNum, uri[56:72], 1)
 	})
 
 	m3u8 = c
@@ -133,11 +134,14 @@ func CompositeVideo() {
 			time.Sleep(time.Second * 3)
 			ts := tsFileNum[dir]
 			tsed := tsFileDoweloadedNum[dir]
-			if ts == tsed {
+			if ts == *tsed {
 				global.Slog.Infof("%s下载完毕,开始合成", dir)
 				break
 			} else {
-				global.Log.Info(dir, zap.String("进度", fmt.Sprintf("%.2f%%", float64(tsed)/float64(ts)*100)), zap.Int("已下载", tsed), zap.Int("总数", ts))
+				global.Log.Info(dir, zap.String("进度",
+					fmt.Sprintf("%.2f%%", float64(*tsed)/float64(ts)*100)),
+					zap.Int64p("已下载", tsed),
+					zap.Int64("总数", ts))
 			}
 		}
 
@@ -149,14 +153,14 @@ func CompositeVideo() {
 			continue
 		}
 
-		if len(dirs) != tsFileNum[dir] {
+		if int64(len(dirs)) != tsFileNum[dir] {
 			global.Slog.Error("m3u8中的uri数量和实际下载完毕的不符")
 			continue
 		}
 
 		var buf bytes.Buffer
 
-		for i := 0; i < tsFileNum[dir]; i++ {
+		for i := int64(0); i < tsFileNum[dir]; i++ {
 			name := fmt.Sprintf("out%d.ts", i)
 			ts, _ := os.ReadFile(workPath + "/" + name)
 			buf.Write(ts)
