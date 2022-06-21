@@ -12,6 +12,7 @@ import (
 	"github.com/gocolly/colly/v2"
 	"github.com/gocolly/colly/v2/extensions"
 	"go.uber.org/zap"
+	"sync/atomic"
 )
 
 var (
@@ -133,14 +134,14 @@ func CompositeVideo() {
 		for {
 			time.Sleep(time.Second * 3)
 			ts := tsFileNum[dir]
-			tsed := tsFileDoweloadedNum[dir]
-			if ts == *tsed {
+			tsed := atomic.LoadInt64(tsFileDoweloadedNum[dir])
+			if ts == tsed {
 				global.Slog.Infof("%s下载完毕,开始合成", dir)
 				break
 			} else {
 				global.Log.Info(dir, zap.String("进度",
-					fmt.Sprintf("%.2f%%", float64(*tsed)/float64(ts)*100)),
-					zap.Int64p("已下载", tsed),
+					fmt.Sprintf("%.2f%%", float64(tsed)/float64(ts)*100)),
+					zap.Int64("已下载", tsed),
 					zap.Int64("总数", ts))
 			}
 		}

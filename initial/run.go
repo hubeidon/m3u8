@@ -10,7 +10,6 @@ func Run() {
 
 // 使用atomic解决map并发写
 func mapWrite(m *map[string]*int64, key string, delta int64) {
-	// m["1"] = 10
 	if (*m)[key] == nil {
 		(*m)[key] = new(int64)
 	}
