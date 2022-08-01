@@ -8,11 +8,12 @@ import (
 	"strings"
 	"time"
 
+	"sync/atomic"
+
 	"gitee.com/don178/m3u8/global"
 	"github.com/gocolly/colly/v2"
 	"github.com/gocolly/colly/v2/extensions"
 	"go.uber.org/zap"
-	"sync/atomic"
 )
 
 var (
@@ -85,7 +86,6 @@ func init() {
 		if err := r.Save(fmt.Sprintf("./data/%s/%s", dirName, uri[i+1:])); err != nil {
 			global.Slog.Error(err)
 		}
-		// tsFileDoweloadedNum[uri[56:72]]++
 		mapWrite(&tsFileDoweloadedNum, uri[56:72], 1)
 	})
 
@@ -132,9 +132,16 @@ func CompositeVideo() {
 		// m3u8.Wait()
 
 		for {
-			time.Sleep(time.Second * 3)
+			// TODO 请求太慢会出现空指针
+			time.Sleep(time.Second * 10)
 			ts := tsFileNum[dir]
-			tsed := atomic.LoadInt64(tsFileDoweloadedNum[dir])
+
+			dn := tsFileDoweloadedNum[dir]
+			if dn == nil {
+				continue
+			}
+			tsed := atomic.LoadInt64(dn)
+
 			if ts == tsed {
 				global.Slog.Infof("%s下载完毕,开始合成", dir)
 				break
