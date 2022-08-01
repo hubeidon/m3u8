@@ -133,7 +133,7 @@ func CompositeVideo() {
 
 		for {
 			// TODO 请求太慢会出现空指针
-			time.Sleep(time.Second * 10)
+			time.Sleep(time.Second * 3)
 			ts := tsFileNum[dir]
 
 			dn := tsFileDoweloadedNum[dir]
