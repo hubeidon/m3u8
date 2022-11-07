@@ -58,10 +58,11 @@ func init() {
 			if strings.HasPrefix(readString, "https://") {
 				readString = strings.TrimSpace(readString)
 				c.Visit(readString)
-				tsFileNum[readString[56:72]]++
+				uriId := getIdInUri(readString)
+				tsFileNum[uriId]++
 
 				if !l {
-					notificationToStartWork <- readString[56:72]
+					notificationToStartWork <- uriId
 					l = true
 				}
 			}
@@ -78,7 +79,7 @@ func init() {
 			return
 		}
 
-		dirName := uri[56:72]
+		dirName := getIdInUri(uri)
 
 		Mkdir("./data/"+dirName, os.ModePerm)
 
@@ -86,7 +87,7 @@ func init() {
 		if err := r.Save(fmt.Sprintf("./data/%s/%s", dirName, uri[i+1:])); err != nil {
 			global.Slog.Error(err)
 		}
-		mapWrite(&tsFileDoweloadedNum, uri[56:72], 1)
+		mapWrite(&tsFileDoweloadedNum, dirName, 1)
 	})
 
 	m3u8 = c
@@ -184,4 +185,8 @@ func CompositeVideo() {
 			delete(tsFileDoweloadedNum, dir)
 		}
 	}
+}
+
+func getIdInUri(str string) string {
+	return str[57:72]
 }
