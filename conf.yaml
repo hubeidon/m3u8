@@ -1,0 +1,24 @@
+# 下载路径
+dir: /home/don178/下载
+
+
+
+# 网络地址
+website:
+
+  - https://al-vod.cdn.huya.com/1048585/1279520613919/23092785/51f1dae7421423e68e800eff52338eb4.m3u8?hyvid=514993415&hyauid=1279520613919&hyroomid=1279520613919&hyratio=4000&hyscence=vod&appid=66&domainid=25&srckey=NjZfMjVfNTE0OTkzNDE1&bitrate=4044&client=115&definition=yuanhua&pid=1279520613919&scene=vod&vid=514993415&u=0&t=100&sv=2211141506
+
+  - https://hw-vod.cdn.huya.com/1048585/1279520613919/24886183/5cc24df2f7de4be904c5af1dac0fca7f.m3u8?hyvid=536287157&hyauid=1279520613919&hyroomid=1279520613919&hyratio=4000&hyscence=vod&appid=66&domainid=25&srckey=NjZfMjVfNTM2Mjg3MTU3&bitrate=4071&client=115&definition=yuanhua&pid=1279520613919&scene=vod&vid=536287157&u=0&t=100&sv=2211141506
+
+
+# 本地地址
+local:
+  - /home/don178/下载/7272045a692d308c4550dfe8f37e092d.m3u8
+
+  - /home/don178/下载/cb101d1caded1981cfe9ae3a1675caa3.m3u8
+
+# 当文件内没有host时会自动在路径前添加prefix
+# 文件名: 文件对应的前缀
+prefix:
+  7272045a692d308c4550dfe8f37e092d.m3u8: https://hw-vod.cdn.huya.com/1048585/1279520613919/25076291
+  cb101d1caded1981cfe9ae3a1675caa3.m3u8: https://hw-vod.cdn.huya.com/1048585/1279520613919/24954089

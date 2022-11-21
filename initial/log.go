@@ -1,7 +1,7 @@
 package initial
 
 import (
-	"fmt"
+	"io"
 	"os"
 
 	"gitee.com/don178/m3u8/global"
@@ -16,10 +16,9 @@ func init() {
 	// WriterSyncer ：指定日志将写到哪里去
 	f, err := os.OpenFile("_cast.log", os.O_RDWR|os.O_CREATE|os.O_APPEND, os.ModePerm)
 	if err != nil {
-		fmt.Println(err)
-		return
+		panic(err)
 	}
-	writer := zapcore.AddSync(f)
+	writer := zapcore.AddSync(io.MultiWriter(f, os.Stdout))
 
 	// Log Level：哪种级别的日志将被写入。
 	core := zapcore.NewCore(encoder, writer, zapcore.DebugLevel)
