@@ -54,8 +54,8 @@ func InitM3u8() *colly.Collector {
 func InitDowner() *colly.Collector {
 	c := colly.NewCollector()
 	c.MaxBodySize = -1
-	c.UserAgent = `Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/101.0.4951.64 Safari/537.36 Edg/101.0.1210.53`
-	c.SetRequestTimeout(time.Minute * 2)
+	c.UserAgent = global.Viper.GetString("user-agent")
+	c.SetRequestTimeout(time.Second * time.Duration(global.Viper.GetInt("request-timeout")))
 
 	c.OnResponse(func(r *colly.Response) {
 		key := fmt.Sprintf("%x", md5.Sum([]byte(r.Request.URL.String())))
