@@ -186,6 +186,11 @@ func (m *m3u8) parseUrls() {
 	} else {
 		m.urls = parseNotCompleteM3u8(m.body.Bytes(), m.prefix)
 	}
+	// 特殊情况
+	// 1. m3u8内所以ts路径都是一样的, 前端通过Range获取不同ts碎片
+	if m.urls[0] == m.urls[len(m.urls)-1] {
+		m.urls = m.urls[:1]
+	}
 }
 func (m *m3u8) fileName() {
 	var n = -1
@@ -194,6 +199,7 @@ func (m *m3u8) fileName() {
 			n = i
 		} else if str == '?' {
 			m.name = m.source[n+1 : i]
+			return
 		}
 	}
 	m.name = m.source[n+1:]
@@ -291,6 +297,10 @@ func (m *m3u8) Run() error {
 }
 
 func main() {
-	m := NewM3u8ByAddress(global.Cfg.Address[0])
-	m.Run()
+	for _, address := range global.Cfg.Address {
+		m := NewM3u8ByAddress(address)
+		if err := m.Run(); err != nil {
+			global.Slog.Errorln(err)
+		}
+	}
 }

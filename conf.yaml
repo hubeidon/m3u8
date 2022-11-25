@@ -7,14 +7,20 @@ userAgent: Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko
 requestTimeout: 200
 
 address:
-  - 
-    # 网络路径或者m3u8本地文件
-    path: C:/Users/17874/Downloads/index.m3u8
-    # 当m3u8文件内没用host时,在地址前添加prefix
-    prefix:
+  # - 
+  #   # 网络路径或者m3u8本地文件
+  #   path: C:/Users/17874/Downloads/57954e06d97dbc04802da00d548e0c52.m3u8
+  #   # 当m3u8文件内没用host时,在地址前添加prefix
+  #   prefix: https://al-vod.cdn.huya.com/1048585/1279520613919/25765095
 
-  - 
+  # - 
+  #   # 网络路径或者m3u8本地文件
+  #   path: C:/Users/17874/Downloads/236f9e44b402f8b696516d9c0821e6af.m3u8
+  #   # 当m3u8文件内没用host时,在地址前添加prefix
+  #   prefix: https://hw-vod.cdn.huya.com/1048585/1279520613919/25030455
+
+   - 
     # 网络路径或者m3u8本地文件
-    path: C:/Users/17874/Downloads/236f9e44b402f8b696516d9c0821e6af.m3u8
+    path: https://hw-vod.cdn.huya.com/1048585/1279520613919/23092785/51f1dae7421423e68e800eff52338eb4.m3u8?hyvid=514993415&hyauid=1279520613919&hyroomid=1279520613919&hyratio=4000&hyscence=vod&appid=66&domainid=25&srckey=NjZfMjVfNTE0OTkzNDE1&bitrate=4044&client=115&definition=yuanhua&pid=1279520613919&scene=vod&vid=514993415&u=1685195357&t=100&sv=2211141506
     # 当m3u8文件内没用host时,在地址前添加prefix
-    prefix: https://hw-vod.cdn.huya.com/1048585/1279520613919/25030455
+    prefix: https://hw-vod.cdn.huya.com/1048585/1279520613919/23092785
