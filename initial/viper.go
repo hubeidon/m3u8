@@ -7,10 +7,14 @@ import (
 
 func init() {
 	v := viper.New()
-	v.SetConfigName("conf")
-	v.SetConfigType("yaml")
-	v.AddConfigPath(".")
+	v.SetConfigFile("conf.yaml")
+	// v.AddConfigPath(".")
+
 	err := v.ReadInConfig() // Find and read the config file
+	if err != nil {             // Handle errors reading the config file
+		panic(err)
+	}
+	err = v.Unmarshal(&global.Cfg)
 	if err != nil {             // Handle errors reading the config file
 		panic(err)
 	}

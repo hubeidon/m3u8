@@ -3,6 +3,7 @@ module gitee.com/don178/m3u8
 go 1.18
 
 require (
+	github.com/forgoer/openssl v1.4.0
 	github.com/gocolly/colly/v2 v2.1.0
 	github.com/spf13/viper v1.14.0
 	go.uber.org/zap v1.23.0

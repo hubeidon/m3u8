@@ -2,131 +2,25 @@ package main
 
 import (
 	"bytes"
-	"crypto/md5"
 	"fmt"
 	"io"
+	"net/http"
 	"os"
 	"path/filepath"
-	"sync"
+	"regexp"
+	"strings"
 	"time"
 
 	"gitee.com/don178/m3u8/global"
 	_ "gitee.com/don178/m3u8/initial"
+	"github.com/forgoer/openssl"
 	"github.com/gocolly/colly/v2"
 	"go.uber.org/zap"
 )
 
-var (
-	Meta   sync.Map
-	M3u8er = InitM3u8()
-	Downer = InitDowner()
-)
-
-type MetaVlaue struct {
-	// fileName文件名称
-	fileName string
-	// dir 文件保存路径
-	dir string
-}
-
-func (m MetaVlaue) completePath() string {
-	return fmt.Sprintf("%s/%s", m.dir, m.fileName)
-}
-
-func InitM3u8() *colly.Collector {
-	c := colly.NewCollector()
-	c.OnResponse(func(r *colly.Response) {
-
-		// 两种情况
-		// 1. m3u8内所有文件地址都是一样的(没有区分地址)(虎牙)
-		// 2. m3u8内对地址进行了区分
-		if err := netAddressHandler(r.Request.URL.String(), r.Body); err != nil {
-			global.Slog.Error(err)
-		}
-	})
-
-	c.OnError(func(r *colly.Response, err error) {
-		global.Slog.Error(err)
-	})
-
-	return c
-}
-func InitDowner() *colly.Collector {
-	c := colly.NewCollector()
-	c.MaxBodySize = -1
-	c.UserAgent = global.Viper.GetString("user-agent")
-	c.SetRequestTimeout(time.Second * time.Duration(global.Viper.GetInt("request-timeout")))
-
-	c.OnResponse(func(r *colly.Response) {
-		key := fmt.Sprintf("%x", md5.Sum([]byte(r.Request.URL.String())))
-		if val, ok := Meta.Load(key); ok {
-			m := val.(MetaVlaue)
-			r.Save(m.completePath())
-		} else {
-			global.Log.Error("Meta miss", zap.String("url", r.Request.URL.String()))
-		}
-	})
-
-	c.OnError(func(r *colly.Response, err error) {
-		global.Slog.Error(err, r.Request.URL.String())
-	})
-	return c
-}
-
-// netAddressHandler 处理网络m3u8
-func netAddressHandler(uri string, body []byte) error {
-	return m3u8Handler(uri[:lastLeftSlash(uri)], urlFileName(uri), body)
-}
-
-// m3u8Handler m3u8 文件处理
-// prefix 当文件内没有host时会自动在路径前添加prefix
-// dir 下载视频存储目录(碎片ts) 当文件内的ts路径是同一个时，使用配置文件内的dir，该dir无效
-func m3u8Handler(prefix, dir string, body []byte) error {
-	// urls 存储完整的ts路径
-	var urls []string
-	if isExistsHost(body) {
-		urls = parseCompleteM3u8(body)
-	} else {
-		urls = parseNotCompleteM3u8(body, prefix)
-	}
-
-	if len(urls) < 1 {
-		return fmt.Errorf("没有解析出ts路径")
-	}
-
-	// 当文件内的ts路径是同一个时
-	if urls[0] == urls[len(urls)-1] {
-		key := fmt.Sprintf("%x", md5.Sum([]byte(urls[0])))
-		Meta.Store(key, MetaVlaue{
-			fileName: urlFileName(urls[0]),
-			dir:      global.Viper.GetString("dir"),
-		})
-		if err := Downer.Visit(urls[0]); err != nil {
-			return err
-		}
-	} else {
-		// 当文件内的ts路径不同
-		for _, url := range urls {
-			key := fmt.Sprintf("%x", md5.Sum([]byte(url)))
-			dir := filepath.Join(global.Viper.GetString("dir"), dir)
-			os.Mkdir(dir, os.ModePerm)
-			Meta.Store(key, MetaVlaue{
-				fileName: urlFileName(url),
-				dir:      dir,
-			})
-			if err := Downer.Visit(url); err != nil {
-				return err
-			}
-		}
-	}
-	return nil
-}
-
 // isExistsHost 判断ts路径是否需要添加前缀
 func isExistsHost(in []byte) bool {
-
 	var buf = bytes.NewBuffer(in)
-
 	for {
 		line, err := buf.ReadBytes('\n')
 		if err == io.EOF {
@@ -135,12 +29,10 @@ func isExistsHost(in []byte) bool {
 		if bytes.HasPrefix(line, []byte("#")) {
 			continue
 		}
-
 		if bytes.HasPrefix(line, []byte("http")) {
 			return true
 		}
 	}
-
 	return false
 }
 
@@ -161,7 +53,7 @@ func parseCompleteM3u8(in []byte) []string {
 		}
 
 		if bytes.HasPrefix(line, []byte("http")) {
-			res = append(res, fmt.Sprint(bytes.TrimSpace(line)))
+			res = append(res, string(bytes.TrimSpace(line)))
 		}
 	}
 
@@ -190,55 +82,215 @@ func parseNotCompleteM3u8(in []byte, host string) []string {
 	return res
 }
 
-func lastLeftSlash(url string) int {
-	var n int = -1
-	for i, str := range url {
-		if str == '/' {
-			n = i
-		} else if str == '?' {
-			break
-		}
-	}
-	return n
+const (
+	HTTP  = "HTTP"
+	LOCAL = "LOCAL"
+)
+
+type m3u8 struct {
+	// 文件内容
+	body bytes.Buffer
+	// ts合集
+	tsBody bytes.Buffer
+	// 解析出来的url地址
+	urls []string
+	// 解密密钥
+	key []byte
+	// 来源类型
+	sType string
+	// 来源
+	source string
+	// 路径文件名
+	name string
+	// 下载器
+	*colly.Collector
+	// 前缀
+	prefix string
 }
 
-func urlFileName(url string) string {
-	var n = -1
+func NewM3u8ByAddress(address global.Address) *m3u8 {
+	m := new(m3u8)
 
-	for i, str := range url {
-		if str == '/' {
-			n = i
-		} else if str == '?' {
-			return url[n+1 : i]
-		}
-	}
-	return url[n+1:]
+	m.sType = isHttpOrLocal(address.Path)
+	m.source = address.Path
+	m.prefix = address.Prefix
+
+	m.Collector = func() *colly.Collector {
+		c := colly.NewCollector()
+		c.MaxBodySize = -1
+		c.UserAgent = global.Cfg.UserAgent
+		c.SetRequestTimeout(global.Cfg.RequestTimeout * time.Second)
+		return c
+	}()
+
+	return m
 }
 
-func localFileHandler(path string) error {
-	body, err := os.ReadFile(path)
+// isHttpOrLocal 判断是网络地址还是本地地址
+func isHttpOrLocal(path string) string {
+	if strings.HasPrefix(path, "http") {
+		return HTTP
+	}
+
+	if f, err := os.Open(path); err != nil {
+		global.Log.Fatal(path, zap.Error(err))
+	} else {
+		f.Close()
+	}
+	return LOCAL
+}
+
+func (m *m3u8) getTsOnHttp() error {
+	res, err := http.Get(m.source)
 	if err != nil {
 		return err
 	}
 
-	prefix := global.Viper.GetString("prefix." + urlFileName(path))
-	if err = m3u8Handler(prefix, urlFileName(path), body); err != nil {
+	n, err := m.body.ReadFrom(res.Body)
+	if err != nil {
+		return err
+	}
+	if n == 0 {
+		return fmt.Errorf("body为空 err:%w", err)
+	}
+	return nil
+}
+func (m *m3u8) getTsOnLocal() error {
+	f, err := os.Open(m.source)
+	if err != nil {
+		return err
+	}
+	n, err := m.body.ReadFrom(f)
+	if err != nil {
+		return err
+	}
+	if n == 0 {
+		return fmt.Errorf("body为空 err:%w", err)
+	}
+	return nil
+}
+func (m *m3u8) getM3u8() {
+	switch m.sType {
+	case HTTP:
+		m.getTsOnHttp()
+	case LOCAL:
+		m.getTsOnLocal()
+	default:
+		global.Log.Fatal("stype error", zap.String("sType", m.sType))
+	}
+}
+
+func (m *m3u8) parseUrls() {
+	if isExistsHost(m.body.Bytes()) {
+		m.urls = parseCompleteM3u8(m.body.Bytes())
+	} else {
+		m.urls = parseNotCompleteM3u8(m.body.Bytes(), m.prefix)
+	}
+}
+func (m *m3u8) fileName() {
+	var n = -1
+	for i, str := range m.source {
+		if str == '/' {
+			n = i
+		} else if str == '?' {
+			m.name = m.source[n+1 : i]
+		}
+	}
+	m.name = m.source[n+1:]
+}
+
+func (m *m3u8) completePath() string {
+	if m.name == "" {
+		m.fileName()
+	}
+	return filepath.Join(global.Cfg.Dir, fmt.Sprint(m.name, ".mp4"))
+}
+
+// onColly 注册collyResponse
+func (m *m3u8) onColly() {
+	if m.isParseEXTXKEY() {
+		m.OnResponse(func(r *colly.Response) {
+			n, err := m.tsBody.Write(r.Body)
+			if fmt.Sprint(n) != r.Headers.Get("content-length") {
+				global.Log.Error("write m.tsBody error", zap.Error(err))
+			}
+		})
+	} else {
+		m.OnResponse(func(r *colly.Response) {
+			f, err := os.OpenFile(m.completePath(), os.O_WRONLY|os.O_CREATE|os.O_APPEND, os.ModePerm)
+			if err != nil {
+				global.Log.Error("save file ", zap.Error(err))
+			}
+			f.Write(r.Body)
+			f.Close()
+		})
+	}
+}
+
+// isParseEXTXKEY 判断是否有加密, 如果有将密钥赋值给 m.key
+func (m *m3u8) isParseEXTXKEY() bool {
+	re := regexp.MustCompile(`#EXT-X-KEY:METHOD=AES-128,URI="(.*?)"`)
+	url := re.FindSubmatch(m.body.Bytes())
+	if len(url) != 2 {
+		return false
+	}
+	rep, err := http.Get(string(url[1]))
+	if err != nil {
+		global.Log.Fatal("获取key uri 失败", zap.Error(err))
+	}
+	m.key = make([]byte, rep.ContentLength)
+	n, err := rep.Body.Read(m.key)
+	if int64(n) != rep.ContentLength {
+		global.Log.Fatal("key 写入 m.key 失败", zap.Error(err))
+	}
+	return true
+}
+
+func (m *m3u8) download() error {
+	for _, url := range m.urls {
+		if err := m.Visit(url); err != nil {
+			return err
+		}
+	}
+	return nil
+}
+
+func (m *m3u8) decrypt() error {
+	if len(m.key) == 0 {
+		return nil
+	}
+	dst, err := openssl.AesCBCDecrypt(m.tsBody.Bytes(), m.key, []byte("1234567890123456"), openssl.PKCS7_PADDING)
+	if err != nil {
 		return err
 	}
 
+	f, err := os.Create(m.completePath())
+	if err != nil {
+		return err
+	}
+
+	if n, err := f.Write(dst); n != len(dst) {
+		global.Log.Error("加密后吸入文件错误", zap.Error(err))
+	}
+	return f.Close()
+}
+
+func (m *m3u8) Run() error {
+	m.getM3u8()
+	m.parseUrls()
+	m.onColly()
+	err := m.download()
+	if err != nil {
+		return err
+	}
+	err = m.decrypt()
+	if err != nil {
+		return err
+	}
 	return nil
 }
 
 func main() {
-	websites := global.Viper.GetStringSlice("website")
-	for _, website := range websites {
-		M3u8er.Visit(website)
-	}
-
-	local := global.Viper.GetStringSlice("local")
-	for _, l := range local {
-		if err := localFileHandler(l); err != nil {
-			global.Slog.Error(err)
-		}
-	}
+	m := NewM3u8ByAddress(global.Cfg.Address[0])
+	m.Run()
 }
