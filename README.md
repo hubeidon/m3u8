@@ -1,6 +1,9 @@
 # M3u8下载
 
-### 使用方法
+## 下载地址
+[m3u8](http://git.kaidon.cn/attachments/f80462f5-20d6-41fb-81cc-2a5d0a5bcc19)
+
+## 使用方法
 在配置文件 conf.yaml 中添加本地路径或者网络路径
 ```yaml
 address:
