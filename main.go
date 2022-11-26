@@ -109,15 +109,16 @@ type m3u8 struct {
 }
 
 func NewM3u8ByAddress(address global.Address) *m3u8 {
-	return NewM3u8(address.Path, address.Prefix)
+	return NewM3u8(address.Path, address.Prefix, address.Fname)
 }
 
-func NewM3u8(path, prefix string) *m3u8 {
+func NewM3u8(path, prefix, fname string) *m3u8 {
 	m := new(m3u8)
 
 	m.sType = isHttpOrLocal(path)
 	m.source = path
 	m.prefix = prefix
+	m.name = fname
 
 	m.Collector = func() *colly.Collector {
 		c := colly.NewCollector()
@@ -210,10 +211,12 @@ func (m *m3u8) fileName() {
 	m.name = m.source[n+1:]
 }
 
+// completePath 返回文件完整地址
 func (m *m3u8) completePath() string {
 	return filepath.Join(global.Cfg.Dir, fmt.Sprint(m.getName(), global.Cfg.Ext))
 }
 
+// getName 获取文件名 (不包含配置文件ext扩展名)
 func (m *m3u8) getName() string {
 	if m.name == "" {
 		m.fileName()

@@ -10,6 +10,7 @@ import (
 type Address struct {
 	Path   string `json:"path,omitempty" yaml:"path"`
 	Prefix string `json:"prefix,omitempty" yaml:"prefix"`
+	Fname string `json:"fname,omitempty" yaml:"fname"`
 }
 
 type Config struct {
