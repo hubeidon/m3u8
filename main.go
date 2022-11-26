@@ -211,16 +211,21 @@ func (m *m3u8) fileName() {
 }
 
 func (m *m3u8) completePath() string {
+	return filepath.Join(global.Cfg.Dir, fmt.Sprint(m.getName(), global.Cfg.Ext))
+}
+
+func (m *m3u8) getName() string {
 	if m.name == "" {
 		m.fileName()
 	}
-	return filepath.Join(global.Cfg.Dir, fmt.Sprint(m.name, global.Cfg.Ext))
+	return m.name
 }
 
 // onColly 注册collyResponse
 func (m *m3u8) onColly() {
 	if m.isParseEXTXKEY() {
 		m.OnResponse(func(r *colly.Response) {
+			global.Log.Debug("写入文件:", zap.String("m3u8", m.getName()), zap.String("ts", r.FileName()))
 			n, err := m.tsBody.Write(r.Body)
 			if fmt.Sprint(n) != r.Headers.Get("content-length") {
 				global.Log.Error("write m.tsBody error", zap.Error(err))
@@ -228,6 +233,7 @@ func (m *m3u8) onColly() {
 		})
 	} else {
 		m.OnResponse(func(r *colly.Response) {
+			global.Log.Debug("写入文件:", zap.String("m3u8", m.getName()), zap.String("ts", r.FileName()))
 			f, err := os.OpenFile(m.completePath(), os.O_WRONLY|os.O_CREATE|os.O_APPEND, os.ModePerm)
 			if err != nil {
 				global.Log.Error("save file ", zap.Error(err))
@@ -287,6 +293,7 @@ func (m *m3u8) decrypt() error {
 }
 
 func (m *m3u8) Run() error {
+	global.Log.Debug("开始下载:", zap.String("m3u8", m.getName()))
 	m.getM3u8()
 	m.parseUrls()
 	m.onColly()
@@ -298,6 +305,7 @@ func (m *m3u8) Run() error {
 	if err != nil {
 		return err
 	}
+	global.Log.Debug("下载完毕:", zap.String("m3u8", m.getName()))
 	return nil
 }
 
