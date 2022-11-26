@@ -10,7 +10,7 @@ import (
 type Address struct {
 	Path   string `json:"path,omitempty" yaml:"path"`
 	Prefix string `json:"prefix,omitempty" yaml:"prefix"`
-	Fname string `json:"fname,omitempty" yaml:"fname"`
+	Fname  string `json:"fname,omitempty" yaml:"fname"`
 }
 
 type Config struct {
@@ -19,6 +19,7 @@ type Config struct {
 	RequestTimeout time.Duration `json:"request_timeout,omitempty" yaml:"requestTimeout"`
 	Address        []Address     `json:"address,omitempty" yaml:"address"`
 	Ext            string        `json:"ext,omitempty" yaml:"ext"`
+	GoNum          int           `json:"go_num,omitempty" yaml:"goNum"`
 }
 
 var (

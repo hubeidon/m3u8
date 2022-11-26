@@ -9,12 +9,29 @@ requestTimeout: 200
 # 添加文件扩展名
 ext: .mp4
 
+# 同时并发数
+goNum: 2
+
 address:
-   - 
+  -
     # 网络路径或者m3u8本地文件
     path: https://hw-vod.cdn.huya.com/1048585/1279520613919/23092785/51f1dae7421423e68e800eff52338eb4.m3u8?hyvid=514993415&hyauid=1279520613919&hyroomid=1279520613919&hyratio=4000&hyscence=vod&appid=66&domainid=25&srckey=NjZfMjVfNTE0OTkzNDE1&bitrate=4044&client=115&definition=yuanhua&pid=1279520613919&scene=vod&vid=514993415&u=1685195357&t=100&sv=2211141506
     # [非必填] 当m3u8文件内没有host时,在地址前添加prefix 
     prefix: https://hw-vod.cdn.huya.com/1048585/1279520613919/23092785
-    # [非必填] 保存文件名称(默认从网络地址中提取名称 51f1dae7421423e68e800eff52338eb4.m3u8)
-    # 最终文件地址 = dir + fname + ext
-    fname: huya
+  -
+    # 网络路径或者m3u8本地文件
+    path: https://al-vod.cdn.huya.com/1048585/1279520613919/25886577/c281ca72c7f897a02a771bb88c4c8c85.m3u8?hyvid=549085083&hyauid=1279520613919&hyroomid=1279520613919&hyratio=1300&hyscence=vod&appid=66&domainid=25&srckey=NjZfMjVfNTQ5MDg1MDgz&bitrate=2097&client=115&definition=1300&pid=1279520613919&scene=vod&vid=549085083&u=0&t=100&sv=2211141506
+    # [非必填] 当m3u8文件内没有host时,在地址前添加prefix 
+    prefix: https://al-vod.cdn.huya.com/1048585/1279520613919/25886577
+  -
+    # 网络路径或者m3u8本地文件
+    path: https://huya-w6.huya.com/2038/391707835/1300/5c50dc87062aef106cdf2d300c297bc1.m3u8?hyvid=391707835&hyauid=1279520613919&hyroomid=1279520613919&hyratio=1300&hyscence=vod&appid=66&domainid=19&srckey=NjZfMTlfMzkxNzA3ODM1&bitrate=930&client=70&definition=1300&pid=1279520613919&scene=vod&vid=391707835&u=0&t=100&sv=2211141506
+    # [非必填] 当m3u8文件内没有host时,在地址前添加prefix 
+    prefix: https://huya-w6.huya.com/2038/391707835/1300
+
+  -
+    # 网络路径或者m3u8本地文件
+    path: https://hw-vod.cdn.huya.com/1048585/1279520613919/35087919/658157d11515a590cb6ea2f4fa3f8ec0.m3u8?hyvid=646639547&hyauid=1279520613919&hyroomid=1279520613919&hyratio=1300&hyscence=vod&appid=66&domainid=25&srckey=NjZfMjVfNjQ2NjM5NTQ3&bitrate=2095&client=115&definition=1300&pid=1279520613919&scene=vod&vid=646639547&u=0&t=100&sv=2211141506
+    # [非必填] 当m3u8文件内没有host时,在地址前添加prefix 
+    prefix: https://hw-vod.cdn.huya.com/1048585/1279520613919/35087919
+

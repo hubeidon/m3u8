@@ -1,6 +1,6 @@
 # M3u8文件下载视频
 通过m3u8网络文件或者本地文件下载合成视频
-- 支持自动Aes解密
+- 支持自动Aes-128解密
 - 支持网络m3u8文件
 - 支持本地m3u8文件
 - 自动添加前缀host
@@ -8,7 +8,7 @@
 
 
 ## 下载地址
-[m3u8](http://git.kaidon.cn/attachments/f80462f5-20d6-41fb-81cc-2a5d0a5bcc19)
+[m3u8](http://git.kaidon.cn/don178/m3u8/releases)
 
 ## 使用方法
 在配置文件 conf.yaml 中添加本地路径或者网络路径
@@ -21,6 +21,10 @@ address:
     prefix: 
     # [非必填] 保存文件名称(默认从网络地址中提取名称)
     # 最终文件地址 = dir + fname + ext
+    fname: 
+   - 
+    path: 
+    prefix: 
     fname: 
 ```
 

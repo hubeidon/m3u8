@@ -9,12 +9,14 @@ import (
 	"path/filepath"
 	"regexp"
 	"strings"
+	"sync"
 	"time"
 
 	"gitee.com/don178/m3u8/global"
 	_ "gitee.com/don178/m3u8/initial"
 	"github.com/forgoer/openssl"
 	"github.com/gocolly/colly/v2"
+	"github.com/panjf2000/ants/v2"
 	"go.uber.org/zap"
 )
 
@@ -94,6 +96,8 @@ type m3u8 struct {
 	tsBody bytes.Buffer
 	// 解析出来的url地址
 	urls []string
+	// KEY METHOD
+	keyMethod string
 	// 解密密钥
 	key []byte
 	// 来源类型
@@ -249,12 +253,13 @@ func (m *m3u8) onColly() {
 
 // isParseEXTXKEY 判断是否有加密, 如果有将密钥赋值给 m.key
 func (m *m3u8) isParseEXTXKEY() bool {
-	re := regexp.MustCompile(`#EXT-X-KEY:METHOD=AES-128,URI="(.*?)"`)
-	url := re.FindSubmatch(m.body.Bytes())
-	if len(url) != 2 {
+	re := regexp.MustCompile(`#EXT-X-KEY:METHOD=(.*?),URI="(.*?)"`)
+	submatch := re.FindSubmatch(m.body.Bytes())
+	if len(submatch) != 3 {
 		return false
 	}
-	rep, err := http.Get(string(url[1]))
+	m.keyMethod = string(submatch[2])
+	rep, err := http.Get(string(submatch[1]))
 	if err != nil {
 		global.Log.Fatal("获取key uri 失败", zap.Error(err))
 	}
@@ -276,9 +281,21 @@ func (m *m3u8) download() error {
 }
 
 func (m *m3u8) decrypt() error {
-	if len(m.key) == 0 {
+	if m.keyMethod == "" {
 		return nil
 	}
+
+	switch m.keyMethod {
+	case "AES-128":
+		return m.aes128()
+	default:
+		return fmt.Errorf("未知的 KEY MOTHED : %s", m.keyMethod)
+	}
+
+}
+
+// AES-128 解密
+func (m *m3u8) aes128() error {
 	dst, err := openssl.AesCBCDecrypt(m.tsBody.Bytes(), m.key, []byte("1234567890123456"), openssl.PKCS7_PADDING)
 	if err != nil {
 		return err
@@ -313,10 +330,20 @@ func (m *m3u8) Run() error {
 }
 
 func main() {
+	pool, err := ants.NewPool(global.Cfg.GoNum)
+	if err != nil {
+		global.Slog.Fatalln(err)
+	}
+	var wg sync.WaitGroup
 	for _, address := range global.Cfg.Address {
 		m := NewM3u8ByAddress(address)
-		if err := m.Run(); err != nil {
-			global.Slog.Errorln(err)
-		}
+		wg.Add(1)
+		pool.Submit(func() {
+			defer wg.Done()
+			if err := m.Run(); err != nil {
+				global.Slog.Errorln(err)
+			}
+		})
 	}
+	wg.Wait()
 }
