@@ -6,6 +6,9 @@ userAgent: Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko
 # 请求超时时间(单位: 秒)
 requestTimeout: 200
 
+# 添加文件扩展名
+ext: .mp4
+
 address:
    - 
     # 网络路径或者m3u8本地文件

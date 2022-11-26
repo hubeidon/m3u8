@@ -109,11 +109,15 @@ type m3u8 struct {
 }
 
 func NewM3u8ByAddress(address global.Address) *m3u8 {
+	return NewM3u8(address.Path, address.Prefix)
+}
+
+func NewM3u8(path, prefix string) *m3u8 {
 	m := new(m3u8)
 
-	m.sType = isHttpOrLocal(address.Path)
-	m.source = address.Path
-	m.prefix = address.Prefix
+	m.sType = isHttpOrLocal(path)
+	m.source = path
+	m.prefix = prefix
 
 	m.Collector = func() *colly.Collector {
 		c := colly.NewCollector()
@@ -192,6 +196,7 @@ func (m *m3u8) parseUrls() {
 		m.urls = m.urls[:1]
 	}
 }
+
 func (m *m3u8) fileName() {
 	var n = -1
 	for i, str := range m.source {
@@ -209,7 +214,7 @@ func (m *m3u8) completePath() string {
 	if m.name == "" {
 		m.fileName()
 	}
-	return filepath.Join(global.Cfg.Dir, fmt.Sprint(m.name, ".mp4"))
+	return filepath.Join(global.Cfg.Dir, fmt.Sprint(m.name, global.Cfg.Ext))
 }
 
 // onColly 注册collyResponse
