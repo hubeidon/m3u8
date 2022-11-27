@@ -250,24 +250,23 @@ func (m *m3u8) onColly() {
 	}
 }
 
-// isEncryption 判断是否有加密, 如果有将密钥赋值给 m.key
+// isEncryption 判断是否有加密, 如果有会初始化 m3u8.Decryption(解密处理程序)
 func (m *m3u8) isEncryption() bool {
-	// 计算出m3u8文件开始的注释部分
-	n := 0
 	for {
 		line, err := m.tsBody.ReadBytes('\n')
 		if err != nil {
 			break
 		}
-		if line[0] == '#'{
-			n += len(line)
-		}else{
+		if bytes.HasPrefix(line, []byte("#EXT-X-KEY:METHOD=")) {
 			break
+		}
+		if line[0] != '#' {
+			return false
 		}
 	}
 
 	for _, decryption := range initial.DecryptionList {
-		if decryption.IsNeed(m.tsBody.Bytes()[:n]) {
+		if decryption.IsNeed(m.tsBody.Bytes()) {
 			m.Decryption = decryption
 			return true
 		}
@@ -315,11 +314,11 @@ func (m *m3u8) Run() error {
 	if err != nil {
 		return err
 	}
-	err = m.decrypt()
-	if err != nil {
-		return err
-	}
 	global.Log.Debug("下载完毕:", zap.String("m3u8", m.getName()))
+	if m.Decryption != nil{
+		global.Log.Debug("解密中:", zap.String("m3u8", m.getName()))
+		return m.decrypt()
+	}
 	return nil
 }
 

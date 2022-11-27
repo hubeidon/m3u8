@@ -13,7 +13,8 @@ import (
 type Decryption interface {
 	// isNeed 判断是否需要该解密算法
 	// 获取解密需要使用的密钥等
-	// head 为m3u8文件开头注释部分
+	// head 为m3u8文件
+	// 如果返回 true 会使用 Decrypt 进行解密
 	IsNeed(head []byte) bool
 	// decrypt 进行解密, 返回解密后的数据
 	Decrypt(dst []byte) ([]byte, error)
