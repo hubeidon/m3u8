@@ -2,19 +2,18 @@ package main
 
 import (
 	"bytes"
+	"errors"
 	"fmt"
 	"io"
 	"net/http"
 	"os"
 	"path/filepath"
-	"regexp"
 	"strings"
 	"sync"
 	"time"
 
 	"gitee.com/don178/m3u8/global"
-	_ "gitee.com/don178/m3u8/initial"
-	"github.com/forgoer/openssl"
+	"gitee.com/don178/m3u8/initial"
 	"github.com/gocolly/colly/v2"
 	"github.com/panjf2000/ants/v2"
 	"go.uber.org/zap"
@@ -87,19 +86,17 @@ func parseNotCompleteM3u8(in []byte, host string) []string {
 const (
 	HTTP  = "HTTP"
 	LOCAL = "LOCAL"
+
+	AES128 = "AES-128"
 )
 
 type m3u8 struct {
 	// 文件内容
 	body bytes.Buffer
-	// ts合集
+	// tsBody 当需要视频需要解密时,存放未解密前的数据
 	tsBody bytes.Buffer
 	// 解析出来的url地址
 	urls []string
-	// KEY METHOD
-	keyMethod string
-	// 解密密钥
-	key []byte
 	// 来源类型
 	sType string
 	// 来源
@@ -110,6 +107,8 @@ type m3u8 struct {
 	*colly.Collector
 	// 前缀
 	prefix string
+	// 解密算法
+	initial.Decryption
 }
 
 func NewM3u8ByAddress(address global.Address) *m3u8 {
@@ -230,7 +229,7 @@ func (m *m3u8) getName() string {
 
 // onColly 注册collyResponse
 func (m *m3u8) onColly() {
-	if m.isParseEXTXKEY() {
+	if m.isEncryption() {
 		m.OnResponse(func(r *colly.Response) {
 			global.Log.Debug("写入文件:", zap.String("m3u8", m.getName()), zap.String("ts", r.FileName()))
 			n, err := m.tsBody.Write(r.Body)
@@ -251,24 +250,29 @@ func (m *m3u8) onColly() {
 	}
 }
 
-// isParseEXTXKEY 判断是否有加密, 如果有将密钥赋值给 m.key
-func (m *m3u8) isParseEXTXKEY() bool {
-	re := regexp.MustCompile(`#EXT-X-KEY:METHOD=(.*?),URI="(.*?)"`)
-	submatch := re.FindSubmatch(m.body.Bytes())
-	if len(submatch) != 3 {
-		return false
+// isEncryption 判断是否有加密, 如果有将密钥赋值给 m.key
+func (m *m3u8) isEncryption() bool {
+	// 计算出m3u8文件开始的注释部分
+	n := 0
+	for {
+		line, err := m.tsBody.ReadBytes('\n')
+		if err != nil {
+			break
+		}
+		if line[0] == '#'{
+			n += len(line)
+		}else{
+			break
+		}
 	}
-	m.keyMethod = string(submatch[2])
-	rep, err := http.Get(string(submatch[1]))
-	if err != nil {
-		global.Log.Fatal("获取key uri 失败", zap.Error(err))
+
+	for _, decryption := range initial.DecryptionList {
+		if decryption.IsNeed(m.tsBody.Bytes()[:n]) {
+			m.Decryption = decryption
+			return true
+		}
 	}
-	m.key = make([]byte, rep.ContentLength)
-	n, err := rep.Body.Read(m.key)
-	if int64(n) != rep.ContentLength {
-		global.Log.Fatal("key 写入 m.key 失败", zap.Error(err))
-	}
-	return true
+	return false
 }
 
 func (m *m3u8) download() error {
@@ -280,23 +284,13 @@ func (m *m3u8) download() error {
 	return nil
 }
 
+// decrypt 进行视频解密后,保存到文件.
 func (m *m3u8) decrypt() error {
-	if m.keyMethod == "" {
-		return nil
+	if m.Decryption == nil {
+		return errors.New("解密处理程序为空")
 	}
 
-	switch m.keyMethod {
-	case "AES-128":
-		return m.aes128()
-	default:
-		return fmt.Errorf("未知的 KEY MOTHED : %s", m.keyMethod)
-	}
-
-}
-
-// AES-128 解密
-func (m *m3u8) aes128() error {
-	dst, err := openssl.AesCBCDecrypt(m.tsBody.Bytes(), m.key, []byte("1234567890123456"), openssl.PKCS7_PADDING)
+	dst, err := m.Decryption.Decrypt(m.tsBody.Bytes())
 	if err != nil {
 		return err
 	}
