@@ -68,15 +68,12 @@ func parseNotCompleteM3u8(in []byte, host string) []string {
 
 	for {
 		line, err := buf.ReadBytes('\n')
-
 		if bytes.HasPrefix(line, []byte("#")) {
 			continue
 		}
-
 		if err == io.EOF {
 			break
 		}
-
 		res = append(res, fmt.Sprintf("%s/%s", host, bytes.TrimSpace(line)))
 	}
 
@@ -86,8 +83,6 @@ func parseNotCompleteM3u8(in []byte, host string) []string {
 const (
 	HTTP  = "HTTP"
 	LOCAL = "LOCAL"
-
-	AES128 = "AES-128"
 )
 
 type m3u8 struct {
@@ -101,7 +96,7 @@ type m3u8 struct {
 	sType string
 	// 来源
 	source string
-	// 路径文件名
+	// 文件名
 	name string
 	// 下载器
 	*colly.Collector
