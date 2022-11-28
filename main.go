@@ -193,7 +193,7 @@ func (m *m3u8) parseUrls() {
 		m.urls = parseNotCompleteM3u8(m.body.Bytes(), m.prefix)
 	}
 	// 特殊情况
-	// 1. m3u8内所以ts路径都是一样的, 前端通过Range获取不同ts碎片
+	// 1. m3u8内所有ts路径都是一样的, 前端通过请求头Range获取不同ts碎片
 	if m.urls[0] == m.urls[len(m.urls)-1] {
 		m.urls = m.urls[:1]
 	}
