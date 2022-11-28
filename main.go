@@ -187,6 +187,9 @@ func (m *m3u8) parseUrls() {
 	if isExistsHost(m.body.Bytes()) {
 		m.urls = parseCompleteM3u8(m.body.Bytes())
 	} else {
+		if m.prefix == "" {
+			m.prefix = m.source[:strings.LastIndex(m.source, "/")]
+		}
 		m.urls = parseNotCompleteM3u8(m.body.Bytes(), m.prefix)
 	}
 	// 特殊情况
@@ -310,7 +313,7 @@ func (m *m3u8) Run() error {
 		return err
 	}
 	global.Log.Debug("下载完毕:", zap.String("m3u8", m.getName()))
-	if m.Decryption != nil{
+	if m.Decryption != nil {
 		global.Log.Debug("解密中:", zap.String("m3u8", m.getName()))
 		return m.decrypt()
 	}
