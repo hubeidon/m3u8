@@ -8,9 +8,6 @@ import (
 func init() {
 	v := viper.New()
 	v.SetConfigFile("conf.yaml")
-	// v.SetConfigName("conf")
-	// v.SetConfigType("yaml")
-	// v.AddConfigPath(".")
 
 	err := v.ReadInConfig() // Find and read the config file
 	if err != nil {             // Handle errors reading the config file
